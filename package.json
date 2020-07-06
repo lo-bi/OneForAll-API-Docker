@@ -1,0 +1,23 @@
+{
+  "name": "oneforall-ws-api",
+  "version": "1.0.0",
+  "description": "Websocket API for OneForAll",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lo-bi/OneForAll-ws-api.git"
+  },
+  "author": "lobi",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lo-bi/OneForAll-ws-api/issues"
+  },
+  "homepage": "https://github.com/lo-bi/OneForAll-ws-api#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "ws": "^7.3.1"
+  }
+}
