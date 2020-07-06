@@ -9,9 +9,8 @@ RUN make
 ADD . /OneForAll/
 RUN mv /massdns/bin/massdns /OneForAll/thirdparty/massdns/massdns_linux_x86_64
 WORKDIR /OneForAll
-ADD requirements.txt /requirements.txt
 RUN pip install uvloop
-RUN pip install -r /requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
+RUN pip install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
 
 RUN mkdir /app
 WORKDIR /app

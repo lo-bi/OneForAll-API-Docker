@@ -48,7 +48,6 @@ app.get('/discover', function (req, res) {
       if (conn.readyState === undefined || conn.readyState > 1) {
         conn = new WebSocket('ws://' + window.location.host + '/');
         conn.onopen = function () {
-            outputWebsocket.innerText = text
           if(typeof cb === "function"){
             cb(conn)
           }
@@ -90,6 +89,7 @@ app.get('/discover', function (req, res) {
             let rawdata = fs.readFileSync(dirName + file);
             let output = JSON.parse(rawdata);
             ws.send(JSON.stringify(output));
+            return console.log(output);
             }
         });
         });
