@@ -22,4 +22,4 @@ ADD *.js /app/
 
 ENV ONEFORALLPATH='../OneForAll/'
 
-ENTRYPOINT ["node", "index.js"]
+ENTRYPOINT ["node", "worker.js"]

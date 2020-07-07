@@ -14,7 +14,11 @@ function start() {
     let workQueue = new Queue('work', REDIS_URL);
 
     workQueue.process(function(job, done) {
+        console.log(`starting job for domain ${job.data.domain}`)
         var cmd = child.exec(`python3 ${oneforallpath}oneforall.py --target ${job.data.domain} --format json --alive true --path ${dirName} run`)
+        cmd.stdout.on('data', (data) => {
+            console.log(`${data}`);
+        });
         cmd.stderr.on('close', function() {
             fs.readdir(dirName, function (err, files) {
                 if (err) {
@@ -24,6 +28,7 @@ function start() {
                     if (file.endsWith('.json')) {
                     let rawdata = fs.readFileSync(dirName + file);
                     let output = JSON.parse(rawdata);
+                    console.log(`ending job for domain ${job.data.domain}`)
                     return { results: output };
                     }
                 });
