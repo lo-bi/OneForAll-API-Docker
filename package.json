@@ -4,7 +4,8 @@
   "description": "Websocket API for OneForAll",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js && node worker.js"
   },
   "repository": {
     "type": "git",
@@ -17,7 +18,9 @@
   },
   "homepage": "https://github.com/lo-bi/OneForAll-ws-api#readme",
   "dependencies": {
+    "bull": "^3.15.0",
     "express": "^4.17.1",
-    "ws": "^7.3.1"
+    "redis": "^3.0.2",
+    "throng": "^4.0.0"
   }
 }

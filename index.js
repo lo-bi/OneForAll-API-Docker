@@ -1,110 +1,44 @@
 const express = require('express')
-const {spawn} = require('child_process');
 
 const PORT = process.env.PORT || 3000
 
 const app = express()
 const http = require("http")
-const WebSocket = require("ws")
 const server = http.createServer(app);
-const wss = new WebSocket.Server({server});
-const fs = require('fs');
-const dirName = '/tmp/'+Date.now()+'/';
-const oneforallpath = process.env.ONEFORALLPATH;
 
-function runScript(domain) {
-    return spawn('python3', [oneforallpath+"oneforall.py", '--target', domain, '--format', 'json', '--alive', 'true', '--path', dirName, 'run']);
-}
+const Queue = require('bull');
+const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+const workQueue = new Queue('work', REDIS_URL);
+
+const regexDomain = /[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/
 
 app.get('/', (req, res) => {
   res.send('OneForAll API is ready! 🚀')
 })
 
-app.get('/discover', function (req, res) {
-    global.input_domain = req.query.domain
-    if (input_domain == undefined || input_domain == '') {
-      res.status(400).send('Missing domain query parameter')
+app.get('/discover', async (req, res) => {
+    let input_domain = req.query.domain
+    if (input_domain == undefined || input_domain == '' || !input_domain.match(regexDomain)) {
+      res.status(400).send('Missing domain query parameter or invalid domain')
       return
     }
-    res.send(`<!doctype html>
-  <html lang="en">
-  <body onload="runWebsocket()">
-  <pre id="outputWebsocket"></pre>
-  
-  <script>
-    var outputWebsocket = document.getElementById("outputWebsocket")
-    function runWebsocket() {
-      outputWebsocket.innerText = ""
-      openConnection(function (connection) {
-        connection.send("run")
-      })
-    }
-    function appendWSText(text) {
-      outputWebsocket.innerText = text
-    }
-    var conn = {}
-    function openConnection(cb) {
-      // uses global 'conn' object
-      if (conn.readyState === undefined || conn.readyState > 1) {
-        conn = new WebSocket('ws://' + window.location.host + '/');
-        conn.onopen = function () {
-          if(typeof cb === "function"){
-            cb(conn)
-          }
-        };
-        conn.onmessage = function (event) {
-          appendWSText(event.data)
-        };
-      } else if(typeof cb === "function"){
-        cb(conn)
-      }
-    }
-    if (window.WebSocket === undefined) {
-      appendWSText("\\nSockets not supported")
-    } else {
-      openConnection();
-    }
-  </script>
-  </body>
-  </html>`)
-  })
-  
-  function runScriptInWebsocket(id, ws) {
-    const child = runScript(input_domain)
-    child.stdout.on('data', (data) => {
-        console.log(`${id}:${data}`);
-      });
-      child.stderr.on('data', (data) => {
-        console.log(`${id}:error:${data}`);
-      });
-    child.stderr.on('close', () => {
-        console.log(`${id}:done`);
-      fs.readdir(dirName, function (err, files) {
-        if (err) {
-            ws.send(JSON.stringify({ status: 'failed' }));
-            return console.log('Unable to fetch result: ' + err);
-        } 
-        files.forEach(function (file) {
-            if (file.endsWith('.json')) {
-            let rawdata = fs.readFileSync(dirName + file);
-            let output = JSON.parse(rawdata);
-            ws.send(JSON.stringify(output));
-            return console.log(output);
-            }
-        });
-        });
-    });
+  let job = await workQueue.add({ domain: input_domain });
+  res.json({ id: job.id });
+});
+
+app.get('/discover/:id', async (req, res) => {
+  let id = req.params.id;
+  let job = await workQueue.getJob(id);
+  let results = ""
+
+  if (job === null) {
+    res.status(404).end();
+  } else {
+    let state = await job.getState();
+    if (state == "completed") { results = job.returnvalue.results; }
+    let reason = job.failedReason;
+    res.json({ id, state, reason, results });
   }
-  
-  let id = 1
-  wss.on('connection', (ws) => {
-    const thisId = id++;
-    ws.on('message', (message) => {
-      if ("run" === message) {
-        ws.send(JSON.stringify({ status: 'running' }));
-        runScriptInWebsocket(thisId, ws)
-      }
-    });
-  });
+});
   
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`))

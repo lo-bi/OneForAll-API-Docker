@@ -1,0 +1,16 @@
+FROM node:14-alpine
+
+RUN apk update
+RUN apk add --no-cache \
+	nodejs \
+	nodejs-npm \
+  udev \
+  git
+
+WORKDIR /app
+
+ADD *.json /app/
+RUN npm i
+ADD *.js /app/
+
+ENTRYPOINT ["node", "index.js"]
