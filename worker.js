@@ -14,22 +14,19 @@ function start() {
     let workQueue = new Queue('work', REDIS_URL);
 
     workQueue.process(function(job, done) {
-        console.log(`starting job for domain ${job.data.domain}`)
-        var cmd = child.exec(`python3 ${oneforallpath}oneforall.py --target ${job.data.domain} --format json --alive true --path ${dirName} run`)
-        cmd.stdout.on('data', (data) => {
-            console.log(`${data}`);
-        });
+        console.log(`starting job ${job.id} for domain ${job.data.domain}`)
+        let cmd = child.exec(`python3 ${oneforallpath}oneforall.py --target ${job.data.domain} --format json --alive true --path ${dirName} run`)
         cmd.stderr.on('close', function() {
             fs.readdir(dirName, function (err, files) {
                 if (err) {
-                    return console.log('Unable to fetch result: ' + err);
+                    done(null, { results: 'Unable to fetch result: ' + err });
                 } 
                 files.forEach(function (file) {
                     if (file.endsWith('.json')) {
                     let rawdata = fs.readFileSync(dirName + file);
                     let output = JSON.parse(rawdata);
-                    console.log(`ending job for domain ${job.data.domain}`)
-                    return { results: output };
+                    console.log(`ending job ${job.id} for domain ${job.data.domain}`)
+                    done(null, { results: output });
                     }
                 });
             });
