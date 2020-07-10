@@ -3,7 +3,6 @@ const Queue = require("bull");
 const fs = require('fs');
 const child = require('child_process')
 
-const dirName = '/tmp/'+Date.now()+'/';
 const oneforallpath = process.env.ONEFORALLPATH;
 
 const REDIS_URL = process.env.REDIS_URL || "redis://127.0.0.1:6379";
@@ -14,6 +13,7 @@ function start() {
     let workQueue = new Queue('work', REDIS_URL);
 
     workQueue.process(function(job, done) {
+        let dirName = '/tmp/'+Date.now()+'/';
         console.log(`starting job ${job.id} for domain ${job.data.domain}`)
         let cmd = child.exec(`python3 ${oneforallpath}oneforall.py --target ${job.data.domain} --format json --alive true --path ${dirName} run`)
         cmd.stderr.on('close', function() {
